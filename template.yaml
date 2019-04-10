@@ -22,6 +22,7 @@ Resources:
         Variables:
           TABLE_NAME: !Ref ServerTable
           TABLE_ARN: !GetAtt ServerTable.Arn
+          FLICKR_API_KEY: !Ref EnvConfigflickrApiKeyAsString
     Metadata:
       StackeryName: writeToTable
   sendDailyEmail:
@@ -45,6 +46,8 @@ Resources:
         Variables:
           TABLE_NAME: !Ref ServerTable
           TABLE_ARN: !GetAtt ServerTable.Arn
+          TO_EMAIL: !Ref EnvConfigserverEmailtoEmailAsString
+          FROM_EMAIL: !Ref EnvConfigserverEmailfromEmailAsString
       Events:
         Timer:
           Type: Schedule
@@ -76,3 +79,17 @@ Parameters:
   EnvironmentTagName:
     Type: String
     Description: Environment Name (injected by Stackery at deployment time)
+  EnvConfigflickrApiKeyAsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/flickrApiKey
+  EnvConfigserverEmailtoEmailAsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/serverEmail/toEmail
+  EnvConfigserverEmailfromEmailAsString:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/serverEmail/fromEmail
+Metadata:
+  EnvConfigParameters:
+    EnvConfigflickrApiKeyAsString: flickrApiKey
+    EnvConfigserverEmailtoEmailAsString: serverEmail.toEmail
+    EnvConfigserverEmailfromEmailAsString: serverEmail.fromEmail
