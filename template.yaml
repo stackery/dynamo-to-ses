@@ -1,3 +1,78 @@
-AWSTemplateFormatVersion: '2010-09-09'
-Transform: 'AWS::Serverless-2016-10-31'
-Resources: {}
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Resources:
+  writeToTable:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-writeToServerTable
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: writeToTable
+      CodeUri: src/writeToTable
+      Handler: index.handler
+      Runtime: nodejs8.10
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Policies:
+        - AWSXrayWriteOnlyAccess
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ServerTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ServerTable
+          TABLE_ARN: !GetAtt ServerTable.Arn
+    Metadata:
+      StackeryName: writeToTable
+  sendDailyEmail:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-sendDailyEmail
+      Description: !Sub
+        - Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+        - ResourceName: sendDailyEmail
+      CodeUri: src/sendDailyEmail
+      Handler: index.handler
+      Runtime: nodejs8.10
+      MemorySize: 3008
+      Timeout: 30
+      Tracing: Active
+      Policies:
+        - AWSXrayWriteOnlyAccess
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ServerTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ServerTable
+          TABLE_ARN: !GetAtt ServerTable.Arn
+      Events:
+        Timer:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 16 * * ? *)
+          Metadata:
+            StackeryName: dailyEmailTrigger
+    Metadata:
+      StackeryName: sendDailyEmail
+  ServerTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      TableName: !Sub ${AWS::StackName}-ServerTable
+    Metadata:
+      StackeryName: ServerTable
+Parameters:
+  StackTagName:
+    Type: String
+    Description: Stack Name (injected by Stackery at deployment time)
+  EnvironmentTagName:
+    Type: String
+    Description: Environment Name (injected by Stackery at deployment time)
