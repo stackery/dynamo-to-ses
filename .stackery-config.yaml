@@ -1,1 +1,2 @@
 stack-name: dynamo-to-ses
+template-path: template.yaml
